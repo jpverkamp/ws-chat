@@ -1,0 +1,39 @@
+<html>
+<head>
+    <title>Chat example</title>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.min.js"></script>
+</head>
+
+<body>
+    <input id="text" type="text" />
+    <input id="send" type="submit" />
+    <div id="chat-log"></div>
+</body>
+
+<script>
+$(function() {
+    var is_secure = (window.location.protocol === "https:");
+    var ws = new WebSocket((is_secure ? "wss://" : "ws://") + document.location.host + "/ws/");
+    //var ws = new WebSocket((is_secure ? "wss://" : "ws://") + document.location.host + ":9000/ws/");
+
+    ws.onopen = function (event) {
+        console.log('READY');
+        $('div#chat-log').prepend('<p>Connected to chat server</p>');
+    };
+
+    ws.onmessage = function (event) {
+        var msg = event.data;
+        console.log('RECV: ' + msg);
+        $('div#chat-log').prepend('<p>' + msg + '</p>');
+    };
+
+    $('input#send').click(function() {
+        var msg = $('input#text').val();
+        console.log('SEND: ' + msg);
+        ws.send(msg);
+        $('input#text').val('');
+    });
+});
+</script>
+</html>
