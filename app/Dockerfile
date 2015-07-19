@@ -1,4 +1,5 @@
 FROM ubuntu:14.04
+WORKDIR /app
 
 RUN apt-get update
 
@@ -15,17 +16,13 @@ RUN apt-get install -y software-properties-common \
 RUN apt-get dist-upgrade -y
 
 # Install requirements
-ADD requirements.txt /app/requirements.txt
-RUN pip3 install -r /app/requirements.txt
+ADD requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Upload the application
-ADD app /app
 ADD nginx /etc/nginx
+ADD . /app
 
 # Start everything up
-
-WORKDIR /app
 EXPOSE 80
-
-CMD nginx \
-    && python3 web-server.py & python3 ws-server.py
+CMD nginx && python3 web-server.py & python3 ws-server.py
