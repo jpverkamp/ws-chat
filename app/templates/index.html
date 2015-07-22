@@ -15,22 +15,39 @@
 $(function() {
     var is_secure = (window.location.protocol === "https:");
     var ws = new WebSocket((is_secure ? "wss://" : "ws://") + document.location.host + "/ws/");
-    
+
     ws.onopen = function (event) {
         console.log('READY');
         $('div#chat-log').prepend('<p>Connected to chat server</p>');
     };
 
     ws.onmessage = function (event) {
-        var msg = event.data;
-        console.log('RECV: ' + msg);
-        $('div#chat-log').prepend('<p>' + msg + '</p>');
+        var msg = JSON.parse(event.data);
+        console.log(msg);
+
+        if ('hello' in msg) {
+            $('div#chat-log').prepend('<p>' + msg['hello'] + ' has joined the chat</p>');
+        } else if ('goodbye' in msg) {
+            $('div#chat-log').prepend('<p>' + msg['goodbye'] + ' has left the chat</p>');
+        } else if ('name' in msg) {
+            $('div#chat-log').prepend('<p>' + msg['name']['old'] + ' is now known as ' + msg['name']['new'] + '</p>');
+        } else if ('say' in msg) {
+            $('div#chat-log').prepend('<p>' + msg['say']['name'] + ': ' + msg['say']['msg'] + '</p>');
+        }
     };
 
     $('input#send').click(function() {
-        var msg = $('input#text').val();
+        var cmd = $('input#text').val();
+        var msg = {};
+
+        if (cmd.match('^/name')) {
+            msg['name'] = cmd.split(' ').slice(1).join(' ');
+        } else {
+            msg['say'] = cmd;
+        }
+
         console.log('SEND: ' + msg);
-        ws.send(msg);
+        ws.send(JSON.stringify(msg));
         $('input#text').val('');
     });
 });

@@ -2,35 +2,54 @@
 
 import asyncio
 import faker
+import json
 import websockets
 
-clients = []
-
+clients = {}
 fake = faker.Factory.create()
 
-def broadcast(src, msg):
-    for client in clients:
-        if client.state == 'CLOSED':
+def broadcast(key, val):
+    msg = json.dumps({key: val})
+
+    for client_id, client in clients.items():
+        if client['socket'].state == 'CLOSED':
             continue
 
-        yield from client.send(src + ': ' + msg)
+        yield from client['socket'].send(msg)
 
 @asyncio.coroutine
-def chat(client, path):
-    name = fake.name()
-    clients.append(client)
-    yield from broadcast('server', name + 'has joined the chat')
+def chat(socket, path):
+
+    client_id = fake.name()
+    clients[client_id] = {
+        'name': 'anonymous ' + client_id,
+        'socket': socket,
+    }
+
+    yield from broadcast('hello', clients[client_id]['name'])
 
     while True:
-        msg = yield from client.recv()
+        msg = yield from socket.recv()
 
         if msg:
-            yield from broadcast(name, msg)
+            data = json.loads(msg)
+            for k, v in data.items():
+
+                if k == 'say':
+                    yield from broadcast('say', {'name': clients[client_id]['name'], 'msg': v})
+
+                elif k == 'name':
+
+                    old_name = clients[client_id]['name']
+                    clients[client_id]['name'] = v
+
+                    yield from broadcast('name', {'old': old_name, 'new': v})
+
         else:
             break
 
-    yield from broadcast('server', name + 'has left the chat')
-    clients.remove(client)
+    yield from broadcast('goodbye', clients[client_id]['name'])
+    del clients[client_id]
 
 start_server = websockets.serve(chat, '0.0.0.0', 9000)
 

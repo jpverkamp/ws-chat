@@ -1,0 +1,11 @@
+client -> server
+
+{say: ...} - send a message to other users, this should be the default
+{name: ...} - set my name to a different value
+
+server -> client
+
+{hello: ...} - a new client has joined the chat, the value is the user's name
+{goodbye: ...} - a client has left the chat, the value is the user's name
+{name: {old: ..., new: ...}} - a client has changed his name
+{say: {name: ..., msg: ...}} - the client with the given name has sent a message
